@@ -2,6 +2,8 @@ sudo: false
 
 language: python
 
+dist: xenial
+
 cache:
   pip: true
   directories:
@@ -25,6 +27,7 @@ addons:
     packages:
     - postgresql-9.6-postgis-2.3
     - nginx
+  firefox: "latest-esr"
 
 matrix:
   fast_finish: true
@@ -133,6 +136,8 @@ matrix:
             TEST_RUN_INTEGRATION: 'True'
             MONITORING_ENABLED: 'False'
             CELERY_ALWAYS_EAGER: 'True'
+    - name: "Selenium Integration Tests"
+      python: 3.6
 
 branches:
   only:
@@ -146,6 +151,9 @@ before_install:
   - scripts/misc/qgis_server_setup.sh before_install
   - chmod +x scripts/misc/bdd_setup.sh
   - scripts/misc/bdd_setup.sh before_install
+  # geonode-selenium
+  - git clone --depth 1 https://github.com/GeoNode/geonode-selenium.git
+  - export GEONODE_REPOSITORY=$(pwd)
 
 install:
   - sudo apt-get -qq -y update
@@ -160,6 +168,9 @@ install:
   - pip install -e . --upgrade
   - pip install pygdal==`gdal-config --version`
   - pip install codecov
+  # geonode-selenium
+  - pip install -r geonode-selenium/requirements.txt
+  - wget https://download.osgeo.org/geotiff/samples/spot/chicago/UTM2GTIF.TIF -P geonode-selenium/data
 
 before_script:
   # Initialize DB
@@ -182,6 +193,7 @@ before_script:
 
 script:
   - paver run_tests --coverage --local false
+  - geonode-selenium/test-docker.sh
 
 after_script:
   # For GeoServer Server Travis steps
